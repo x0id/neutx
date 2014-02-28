@@ -1,4 +1,8 @@
 
 ACLOCAL_AMFLAGS = -I build-aux
 
-SUBDIRS = src
+if DEMO
+DEMODIR = demo
+endif
+
+SUBDIRS = src $(DEMODIR)

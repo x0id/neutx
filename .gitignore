@@ -12,3 +12,4 @@ configure
 install
 libtool
 stamp-h1
+*.bin

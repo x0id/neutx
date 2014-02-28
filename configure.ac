@@ -9,6 +9,13 @@ AC_CONFIG_HEADERS([config.h])
 
 dnl Build options.
 
+dnl optional build demo
+AC_ARG_ENABLE(demo,
+    AC_HELP_STRING([--enable-demo], [compile demo programs [[default=no]]]),
+    [case ${enableval} in yes) demo=true;; *) demo=false;; esac], [demo=false]
+)
+AM_CONDITIONAL([DEMO], [test "x$demo" = "xtrue"])
+
 CXXFLAGS="${CXXFLAGS% } -MMD"
 
 AC_ARG_ENABLE(debug,
@@ -50,5 +57,6 @@ dnl Output.
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([demo/Makefile])
 
 AC_OUTPUT
