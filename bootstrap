@@ -1,0 +1,4 @@
+#!/bin/sh
+
+mkdir build-aux 2>/dev/null
+autoreconf -v --install

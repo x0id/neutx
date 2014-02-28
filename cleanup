@@ -1,0 +1,9 @@
+#!/bin/sh
+
+rm -fr \
+install build-aux \
+aclocal.m4 autom4te.cache libtool stamp-h1 \
+config.h.in config.h.in~ configure config.h config.log config.status \
+Makefile.in */Makefile.in \
+Makefile src/Makefile \
+*/.deps
