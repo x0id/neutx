@@ -5,4 +5,4 @@ if DEMO
 DEMODIR = demo
 endif
 
-SUBDIRS = src $(DEMODIR)
+SUBDIRS = src test $(DEMODIR)

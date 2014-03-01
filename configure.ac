@@ -7,14 +7,27 @@ AC_CONFIG_MACRO_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_HEADERS([config.h])
 
-dnl Build options.
+dnl boost library
+AX_BOOST_BASE
+AX_BOOST_CHRONO
+AX_BOOST_SYSTEM
+AX_BOOST_UNIT_TEST_FRAMEWORK
 
-dnl optional build demo
-AC_ARG_ENABLE(demo,
-    AC_HELP_STRING([--enable-demo], [compile demo programs [[default=no]]]),
-    [case ${enableval} in yes) demo=true;; *) demo=false;; esac], [demo=false]
-)
-AM_CONDITIONAL([DEMO], [test "x$demo" = "xtrue"])
+dnl make use of boost lib dir
+AC_SUBST([BOOSTLIBDIR])
+
+dnl Checks for programs.
+AC_PROG_CXX
+
+dnl Support static libraries via libtool
+AM_PROG_AR
+
+dnl Libtool
+LT_INIT
+
+dnl Checks for libraries.
+
+dnl Tweaking build options.
 
 CXXFLAGS="${CXXFLAGS% } -MMD"
 
@@ -42,21 +55,19 @@ AC_ARG_ENABLE(warnings,
     ]
 )
 
-dnl support static libraries via libtool
-AM_PROG_AR
-
-dnl libtool
-LT_INIT
-
-dnl Checks for programs.
-AC_PROG_CXX
-
-dnl Checks for libraries.
+dnl optional build demo
+AC_ARG_ENABLE(demo,
+    AC_HELP_STRING([--enable-demo], [compile demo programs [[default=no]]]),
+    [case ${enableval} in yes) demo=true;; *) demo=false;; esac], [demo=false]
+)
+AM_CONDITIONAL([DEMO], [test "x$demo" = "xtrue"])
 
 dnl Output.
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([test/Makefile])
 AC_CONFIG_FILES([demo/Makefile])
+AC_CONFIG_FILES([test.sh], [chmod +x test.sh])
 
 AC_OUTPUT

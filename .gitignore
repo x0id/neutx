@@ -12,4 +12,5 @@ configure
 install
 libtool
 stamp-h1
+test.sh
 *.bin
