@@ -425,15 +425,6 @@ BOOST_FIXTURE_TEST_CASE( chrono_test, f0 )
     srand(1);
     l_cnt = 0;
 
-    std::string s;
-    time_point tp1a = clock::now();
-    for (int i=0; i<l_total; ++i)
-        s = make_number<5>(&l_cnt);
-    duration d1a = clock::now() - tp1a;
-
-    srand(1);
-    l_cnt = 0;
-
     map_t l_map;
     time_point tp2 = clock::now();
     for (int i=0; i<l_total; ++i) {

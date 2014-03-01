@@ -7,6 +7,9 @@ AC_CONFIG_MACRO_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_HEADERS([config.h])
 
+dnl save flags before boost tests
+CXX_FLAGS_SAVED="${CXXFLAGS}"
+
 dnl boost library
 AX_BOOST_BASE
 AX_BOOST_CHRONO
@@ -29,7 +32,8 @@ dnl Checks for libraries.
 
 dnl Tweaking build options.
 
-CXXFLAGS="${CXXFLAGS% } -MMD"
+dnl restore original flags, adding new options
+CXXFLAGS="${CXX_FLAGS_SAVED% } -MMD"
 
 AC_ARG_ENABLE(debug,
     AC_HELP_STRING([--enable-debug], [enable debug [[default=yes]]]),
@@ -42,7 +46,7 @@ AC_ARG_ENABLE(debug,
 AC_ARG_ENABLE(optimize,
     AC_HELP_STRING([--enable-optimize], [enable optimization [[default=no]]]),
     [ if test "x$enable_optimize" = "xyes" ; then
-          CXXFLAGS="${CXXFLAGS% } -g -O3"
+          CXXFLAGS="${CXXFLAGS% } -g -O3 -fno-strict-aliasing"
       fi
     ]
 )
