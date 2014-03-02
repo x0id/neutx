@@ -1,7 +1,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([neutx], [0.1])
+AC_INIT([neutx],[0.1])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -40,7 +40,7 @@ dnl restore original flags, adding new options
 CXXFLAGS="${CXX_FLAGS_SAVED% } -MMD"
 
 AC_ARG_ENABLE(debug,
-    AC_HELP_STRING([--enable-debug], [enable debug [[default=yes]]]),
+    AS_HELP_STRING([--enable-debug],[enable debug [[default=yes]]]),
     [ if test "x$enable_debug" = "xyes" -o -z "x$enable_debug"; then
         CXXFLAGS="${CXXFLAGS% } -g -O0 -Wall"
       fi
@@ -48,7 +48,7 @@ AC_ARG_ENABLE(debug,
 )
 
 AC_ARG_ENABLE(optimize,
-    AC_HELP_STRING([--enable-optimize], [enable optimization [[default=no]]]),
+    AS_HELP_STRING([--enable-optimize],[enable optimization [[default=no]]]),
     [ if test "x$enable_optimize" = "xyes" ; then
           CXXFLAGS="${CXXFLAGS% } -g -O3 -fno-strict-aliasing"
       fi
@@ -56,7 +56,7 @@ AC_ARG_ENABLE(optimize,
 )
 
 AC_ARG_ENABLE(warnings,
-    AC_HELP_STRING([--enable-warnings], [enable all warnings [[default=yes]]]),
+    AS_HELP_STRING([--enable-warnings],[enable all warnings [[default=yes]]]),
     [ if test "x$enable_warnings" = "xyes" -o -z "$enable_warnings"; then
           CXXFLAGS="${CXXFLAGS% } -Wall -Werror"
       fi
@@ -65,7 +65,7 @@ AC_ARG_ENABLE(warnings,
 
 dnl optional build demo
 AC_ARG_ENABLE(demo,
-    AC_HELP_STRING([--enable-demo], [compile demo programs [[default=no]]]),
+    AS_HELP_STRING([--enable-demo],[compile demo programs [[default=no]]]),
     [case ${enableval} in yes) demo=true;; *) demo=false;; esac], [demo=false]
 )
 AM_CONDITIONAL([DEMO], [test "x$demo" = "xtrue"])

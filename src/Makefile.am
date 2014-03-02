@@ -1,9 +1,9 @@
 
 ACLOCAL_AMFLAGS = -I build-aux
 
-# lib_LTLIBRARIES = libtzpcf.la
+lib_LTLIBRARIES = libneutx.la
 
-# libtzpcf_la_SOURCES = todo.cpp
+libneutx_la_SOURCES = lib.cpp
 
 bin_PROGRAMS = test
 
