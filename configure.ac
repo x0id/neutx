@@ -19,6 +19,10 @@ AX_BOOST_UNIT_TEST_FRAMEWORK
 dnl make use of boost lib dir
 AC_SUBST([BOOSTLIBDIR])
 
+dnl find list of all header files in include folder
+inc_files_list=`find include -name \*.@<:@hi@:>@pp -print`
+AC_SUBST([INCFILES], [`echo $inc_files_list`])
+
 dnl Checks for programs.
 AC_PROG_CXX
 

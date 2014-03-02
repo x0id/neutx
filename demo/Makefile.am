@@ -5,6 +5,8 @@ bin_PROGRAMS = \
 	digit_trie_demo digit_trie_write_demo digit_trie_mmap_demo \
 	digit_actrie_demo digit_actrie_write_demo digit_actrie_mmap_demo
 
+include_HEADERS = string_codec.hpp
+
 strie_demo_SOURCES = strie_demo.cpp
 strie_demo_CPPFLAGS = -I../include
 
