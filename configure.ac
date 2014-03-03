@@ -12,8 +12,15 @@ CXX_FLAGS_SAVED="${CXXFLAGS}"
 
 dnl boost library
 AX_BOOST_BASE
-AX_BOOST_CHRONO
 AX_BOOST_SYSTEM
+
+dnl boost 1.47.0 (fedora 16), 1.48.0 (fedora 17) broken
+dnl chrono library dependencies workaround
+LD_FLAGS_SAVED=$LDFLAGS
+LDFLAGS="${LDFLAGS% } $BOOST_LDFLAGS $BOOST_SYSTEM_LIB"
+AX_BOOST_CHRONO
+LDFLAGS=$LD_FLAGS_SAVED
+
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 dnl make use of boost lib dir
