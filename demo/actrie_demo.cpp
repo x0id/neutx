@@ -38,7 +38,7 @@ typedef ct::ptrie<node_t> trie_t;
 typedef trie_t::store_t store_t;
 
 // key element position type (default: uint32_t)
-typedef typename trie_t::position_t pos_t;
+typedef trie_t::position_t pos_t;
 
 // fold functor example
 static bool fun(std::string& acc, const data_t& data, const trie_t::store_t&,

@@ -34,6 +34,8 @@
 #include <boost/chrono/system_clocks.hpp>
 #endif
 
+#include <iostream>
+
 namespace actrie_test {
 
 namespace ct = neutx::container;
@@ -78,7 +80,7 @@ struct f0 {
     typedef ct::ptrie<node_t> trie_t;
 
     // node store type
-    typedef typename trie_t::store_t store_t;
+    typedef trie_t::store_t store_t;
 
     // fold functor to gather matched tags
     static bool lookup(ret_t& ret, const std::string& data,
@@ -121,7 +123,7 @@ struct f1 {
         typedef offset_t addr_type;
         typedef dt::file_store<addr_type> store_type;
         typedef encoder<addr_type> data_encoder;
-        typedef typename dt::sarray<addr_type>::encoder coll_encoder;
+        typedef dt::sarray<addr_type>::encoder coll_encoder;
         typedef dt::mmap_trie_codec::encoder<addr_type> trie_encoder;
     };
 };
@@ -136,7 +138,7 @@ struct f2 {
     > node_t;
     typedef dt::mmap_trie_codec::root_finder<offset_t> root_f;
     typedef ct::mmap_ptrie<node_t, root_f> trie_t;
-    typedef typename trie_t::store_t store_t;
+    typedef trie_t::store_t store_t;
 
     // fold functor to gather matched tags
     static

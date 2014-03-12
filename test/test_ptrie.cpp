@@ -98,7 +98,7 @@ struct f0 {
 
     typedef boost::unordered_map<key_t, tab_data_t, boost::hash<key_t>,
                                 std::equal_to<key_t>, map_alloc> tab_t;
-    typedef typename tab_t::const_iterator tab_it_t;
+    typedef tab_t::const_iterator tab_it_t;
 
     typedef neutx::memstat_alloc<char, memstat<cStore> > node_alloc;
     typedef neutx::memstat_alloc<char, memstat<cTrie> > trie_alloc;
@@ -114,7 +114,7 @@ struct f0 {
     typedef ct::ptrie<node_t> trie_t;
 
     // node store type
-    typedef typename trie_t::store_t store_t;
+    typedef trie_t::store_t store_t;
 
     // fold functor to perform lookup
     static bool lookup(const data_t*& ret, const data_t& data, store_t&,
@@ -164,7 +164,7 @@ struct f1 {
         typedef offset_t addr_type;
         typedef dt::file_store<addr_type> store_type;
         typedef data::encoder<addr_type> data_encoder;
-        typedef typename dt::sarray<addr_type>::encoder coll_encoder;
+        typedef dt::sarray<addr_type>::encoder coll_encoder;
         typedef dt::mmap_trie_codec::encoder<addr_type> trie_encoder;
     };
 };
@@ -180,7 +180,7 @@ struct f2 {
     > node_t;
     typedef dt::mmap_trie_codec::root_finder<offset_t> root_f;
     typedef ct::mmap_ptrie<node_t, root_f> trie_t;
-    typedef typename trie_t::store_t store_t;
+    typedef trie_t::store_t store_t;
 
     // fold functor to save exact lookup result in a string
     static bool copy_exact_f(std::string &acc, offset_t off,
@@ -319,12 +319,12 @@ BOOST_FIXTURE_TEST_CASE( write_read_test, f0 )
     } // end of all objects life
 
     // make sure all memory released
-    BOOST_REQUIRE_EQUAL(0, memstat<cData>::cnt );
-    BOOST_REQUIRE_EQUAL(0, memstat<cStore>::cnt );
-    BOOST_REQUIRE_EQUAL(0, memstat<cTrie>::cnt );
-    BOOST_REQUIRE_EQUAL(0, memstat<cKey>::cnt );
-    BOOST_REQUIRE_EQUAL(0, memstat<cTabData>::cnt );
-    BOOST_REQUIRE_EQUAL(0, memstat<cMap>::cnt );
+    BOOST_REQUIRE_EQUAL((size_t)0, memstat<cData>::cnt );
+    BOOST_REQUIRE_EQUAL((size_t)0, memstat<cStore>::cnt );
+    BOOST_REQUIRE_EQUAL((size_t)0, memstat<cTrie>::cnt );
+    BOOST_REQUIRE_EQUAL((size_t)0, memstat<cKey>::cnt );
+    BOOST_REQUIRE_EQUAL((size_t)0, memstat<cTabData>::cnt );
+    BOOST_REQUIRE_EQUAL((size_t)0, memstat<cMap>::cnt );
 }
 
 BOOST_FIXTURE_TEST_CASE( compact_test, f1 )
@@ -387,7 +387,7 @@ BOOST_FIXTURE_TEST_CASE( mmap_test, f2 )
             BOOST_REQUIRE_EQUAL(0, strcmp(l_num, l_data_ptr->m_str));
             ++l_found;
         } else {
-            BOOST_REQUIRE_EQUAL(0, l_ret.size());
+            BOOST_REQUIRE_EQUAL((size_t)0, l_ret.size());
         }
     }
     BOOST_TEST_MESSAGE( "from " << l_total << " found: " << l_found );

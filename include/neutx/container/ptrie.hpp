@@ -430,7 +430,7 @@ protected:
             boost::ref(enc), boost::ref(out)), enc, out);
         // update cross-reference links
         m_root.store_links<T, Out>(m_store, boost::bind(
-            &ptrie::store_links<T, Out>, this, _1,
+            &ptrie::template store_links<T, Out>, this, _1,
                 boost::ref(enc), boost::ref(out)), enc, out);
         // return root node address
         return ret;
@@ -446,7 +446,7 @@ protected:
     template<typename T, typename Out>
     void store_links(ptr_t addr, T& enc, Out& out) const {
         node_ptr(addr)->template store_links<T, Out>(m_store, boost::bind(
-            &ptrie::store_links<T, Out>, this, _1,
+            &ptrie::template store_links<T, Out>, this, _1,
                 boost::ref(enc), boost::ref(out)), enc, out);
     }
 

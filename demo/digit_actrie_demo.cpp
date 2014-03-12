@@ -17,6 +17,8 @@
 
 #include <neutx/container/digit_trie.hpp>
 
+#include <iostream>
+
 namespace ct = neutx::container;
 
 // payload type
@@ -26,16 +28,16 @@ typedef std::string data_t;
 typedef ct::digit_trie<data_t, ct::Trie_AhoCorasick> types;
 
 // trie node type
-typedef typename types::node_type node_t;
+typedef types::node_type node_t;
 
 // trie type
-typedef typename types::trie_type trie_t;
+typedef types::trie_type trie_t;
 
 // concrete trie store type
-typedef typename types::store_type store_t;
+typedef types::store_type store_t;
 
 // key element position type
-typedef typename types::position_type pos_t;
+typedef types::position_type pos_t;
 
 // fold functor example
 static bool fun(std::string& acc, const data_t& data, const store_t&,

@@ -23,6 +23,8 @@
 
 #include "string_codec.hpp"
 
+#include <iostream>
+
 namespace ct = neutx::container;
 namespace dt = neutx::container::detail;
 
@@ -44,10 +46,10 @@ typedef dt::mmap_trie_codec::root_finder<offset_t> root_f;
 typedef ct::mmap_ptrie<node_t, root_f> trie_t;
 
 // concrete trie store type
-typedef typename trie_t::store_t store_t;
+typedef trie_t::store_t store_t;
 
 // key element position type (default: uint32_t)
-typedef typename trie_t::position_t pos_t;
+typedef trie_t::position_t pos_t;
 
 // fold functor example
 static bool fun(const char *& acc, const data_t& data, const store_t& store,

@@ -25,7 +25,7 @@ namespace neutx {
 namespace container {
 namespace detail {
 
-namespace {
+namespace internal {
 
 /**
  * \brief optional node metadata
@@ -66,7 +66,7 @@ public:
     typedef typename sarray_t::symbol_t symbol_t;
 
     // metadata to support cross-links writing
-    typedef meta<Offset> meta_t;
+    typedef internal::meta<Offset> meta_t;
 
     // constructor
     pnode_ss() : m_suffix(store_t::null), m_shift(0) {}

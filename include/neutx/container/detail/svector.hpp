@@ -35,7 +35,8 @@ template <typename Data = char, typename IdxMap = idxmap<1>,
 class svector {
     typedef typename IdxMap::mask_t mask_t;
     typedef typename IdxMap::index_t index_t;
-    typedef std::vector<Data, Alloc> array_t;
+    typedef typename Alloc::template rebind<Data>::other alloc_t;
+    typedef std::vector<Data, alloc_t> array_t;
 
     enum { capacity = IdxMap::capacity };
 
