@@ -4,6 +4,7 @@ bin_PROGRAMS = test_neutx
 test_neutx_SOURCES = \
 	test_atomic_value.cpp \
 	test_ptrie.cpp test_actrie.cpp \
+	test_timeconv.cpp \
 	test_main.cpp
 
 test_neutx_CPPFLAGS = \
