@@ -178,8 +178,8 @@ public:
     }
 
     // get offset(s) for local time represented in seconds
-    void offset(time_t local_secs, shift_point& ret) {
-        tztree_t::iterator it = m_tztree.upper_bound(local_secs);
+    void offset(time_t local_secs, shift_point& ret) const {
+        tztree_t::const_iterator it = m_tztree.upper_bound(local_secs);
         if (it == m_tztree.end()) {
             ret.t0 = m_switch_t;
             ret.off1 = m_def_offset;
