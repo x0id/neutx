@@ -216,6 +216,10 @@ private:
         const int l_step = 3600 * 12;
         time_t hi_edge = m_hitime - l_step;
 
+        // init m_def_offset in case we won't find any switch
+        tim t0(1398127371);
+        m_def_offset = tmdiff(t0.m_tm, t0.m_tm_utc);
+
         tim t1(m_lotime);
 
         for (tim t2 = t1; t2.m_t < m_hitime; t1 = t2) {
