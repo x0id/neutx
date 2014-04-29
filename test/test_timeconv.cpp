@@ -15,6 +15,8 @@
 #include <config.h>
 #include <neutx/time/timeconv.hpp>
 #include <boost/numeric/conversion/cast.hpp>
+#include <boost/foreach.hpp>
+#include <fstream>
 
 #include <boost/test/unit_test.hpp>
 
@@ -73,6 +75,77 @@ struct f {
     }
 };
 
+struct codec {
+    class ofile {
+        std::ofstream ofs;
+    public:
+        ofile(const char *file) {
+            ofs.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+            ofs.open(file, std::ios::out | std::ios::binary | std::ios::trunc);
+        }
+        ~ofile() {
+            try {
+                ofs.close();
+            } catch (...) {
+            }
+        }
+        void write(const void *buf, size_t len) {
+            ofs.write((const char *)buf, len);
+        }
+    };
+
+    class ifile {
+        std::ifstream ifs;
+    public:
+        ifile(const char *fname) {
+            ifs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+            ifs.open(fname, std::ios::in | std::ios::binary);
+        }
+        ifile() {
+            try {
+                ifs.close();
+            } catch (...) {
+            }
+        }
+        void read(void *buf, size_t len) {
+            ifs.read((char *)buf, len);
+        }
+    };
+
+    struct head {
+        nt::tzdata::tztree_t::size_type n;
+        time_t lo, hi, sw;
+        long off;
+    };
+
+    void dump(const char *file, const nt::tzdata& data) {
+        ofile out(file);
+        head h; bzero(&h, sizeof(h));
+        h.n = data.tztree().size();
+        h.lo = data.lotime();
+        h.hi = data.hitime();
+        h.sw = data.last_switch_time();
+        h.off = data.default_offset();
+        out.write(&h, sizeof(h));
+        BOOST_FOREACH(const nt::tzdata::tzval_t& v, data.tztree())
+            out.write(&v, sizeof(v));
+    }
+
+    boost::shared_ptr<nt::tzdata> load(const char *file) {
+        ifile in(file);
+        head h;
+        in.read(&h, sizeof(h));
+        boost::shared_ptr<nt::tzdata> tz(new nt::tzdata(h.lo, h.hi, h.off));
+        nt::tzdata::tztree_t::size_type i;
+        nt::tzdata::tzval_t v;
+        for (i=0; i<h.n; ++i) {
+            in.read(&v, sizeof(v));
+            tz->add_point(v.first, v.second);
+        }
+        return tz;
+    }
+};
+
 BOOST_AUTO_TEST_SUITE( test_tztree )
 
 BOOST_AUTO_TEST_CASE( load_tztree_test )
@@ -80,6 +153,29 @@ BOOST_AUTO_TEST_CASE( load_tztree_test )
     BOOST_TEST_MESSAGE("loading tz data");
     nt::tzdata *tz = new nt::tzdata(1950, 2100, "America/New_York");
     BOOST_REQUIRE(tz != 0);
+    delete tz;
+}
+
+BOOST_FIXTURE_TEST_CASE( write_to_file_test, codec )
+{
+    BOOST_TEST_MESSAGE("loading tz data");
+    nt::tzdata *tz = new nt::tzdata(1950, 2100, "America/New_York");
+    BOOST_REQUIRE(tz != 0);
+    const char *file = "file1.bin";
+    BOOST_TEST_MESSAGE("writing to file " << file);
+    dump(file, *tz);
+    delete tz;
+}
+
+BOOST_FIXTURE_TEST_CASE( load_from_file_test, codec )
+{
+    const char *file1 = "file1.bin";
+    const char *file2 = "file2.bin";
+    BOOST_TEST_MESSAGE("reading from file " << file1);
+    boost::shared_ptr<nt::tzdata> tzptr = load(file1);
+    BOOST_REQUIRE(tzptr.use_count() == 1);
+    BOOST_TEST_MESSAGE("writing to file " << file2);
+    dump(file2, *tzptr);
 }
 
 BOOST_FIXTURE_TEST_CASE( simple_test, f )

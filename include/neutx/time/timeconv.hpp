@@ -166,16 +166,44 @@ public:
         long off2; // new seconds east of UTC
     };
 
-private:
     typedef std::map<time_t, shift_point> tztree_t;
+    typedef tztree_t::value_type tzval_t;
 
-public:
+    // construct tzdata from result of particular
+    // timezone discovering process in given years interval
     tzdata(int y1, int y2, const char *tz = 0) {
         if (tz)
             load_tztree(y1, y2, tz);
         else
             load_tztree(y1, y2);
     }
+
+    // construct 'empty' tzdata with defaults only, later can be
+    // populated with transitions using add_point() method
+    tzdata(time_t start, time_t stop, long offset)
+        : m_switch_t(stop)
+        , m_def_offset(offset)
+        , m_lotime(start), m_hitime(stop)
+    {}
+
+    // add transition point data to the tree
+    void add_point(time_t t, const shift_point& p) {
+        m_tztree[t] = p;
+        // adjust 'last switch time'
+        if (m_switch_t == m_hitime || m_switch_t < p.t0)
+            m_switch_t = p.t0;
+    }
+
+    // served limits
+    time_t lotime() const { return m_lotime; }
+    time_t hitime() const { return m_hitime; }
+
+    // defaults
+    time_t last_switch_time() const { return m_switch_t; }
+    long default_offset() const { return m_def_offset; }
+
+    // three const getter
+    const tztree_t& tztree() const { return m_tztree; }
 
     // get offset(s) for local time represented in seconds
     void offset(time_t local_secs, shift_point& ret) const {
@@ -187,10 +215,6 @@ public:
         } else
             ret = it->second;
     }
-
-    // served limits
-    time_t lotime() const { return m_lotime; }
-    time_t hitime() const { return m_hitime; }
 
 private:
     void load_tztree(int y1, int y2, const char *tz) {
@@ -212,6 +236,7 @@ private:
     void load_tztree(int y1, int y2) {
         m_lotime = year_to_time_t(y1);
         m_hitime = year_to_time_t(y2);
+        m_switch_t = m_hitime;
 
         const int l_step = 3600 * 12;
         time_t hi_edge = m_hitime - l_step;
@@ -223,12 +248,11 @@ private:
         tim t1(m_lotime);
 
         for (tim t2 = t1; t2.m_t < m_hitime; t1 = t2) {
-            if (t2.m_t >= hi_edge) {
+            if (t2.m_t >= hi_edge)
                 t2 = m_hitime;
-            } else {
+            else
                 t2.m_t += l_step;
-                t2.localtime();
-            }
+            t2.localtime();
             if (!t2.compare_diffs(t1)) {
                 hunt(t1, t2);
                 long o1 = tmdiff(t1.m_tm, t1.m_tm_utc);
@@ -254,10 +278,11 @@ private:
     }
 
     tztree_t m_tztree;  // tree containing offsets
-    time_t m_switch_t;  // time of last switch
-    long m_def_offset;  // default tz offset or m_hitime
-    time_t m_lotime;      // minimum time
-    time_t m_hitime;      // maximum time
+    time_t m_switch_t;  // time of last switch or m_hitime if no switch exists
+    long m_def_offset;  // default tz offset
+    // domain of the tree
+    time_t m_lotime;    // minimum time, UTC seconds
+    time_t m_hitime;    // maximum time, UTC seconds
 };
 
 } // namespace time
