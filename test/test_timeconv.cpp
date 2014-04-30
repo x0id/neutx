@@ -24,6 +24,26 @@
 #include <boost/chrono/system_clocks.hpp>
 #endif
 
+namespace neutx {
+namespace time {
+
+bool operator==(const tzdata::tzval_t& v1, const tzdata::tzval_t& v2) {
+    if (v1.first != v2.first) return false;
+    if (v1.second.t0 != v2.second.t0) return false;
+    if (v1.second.off1 != v2.second.off1) return false;
+    if (v1.second.off2 != v2.second.off2) return false;
+    return true;
+}
+
+std::ostream& operator<<(std::ostream& out, const tzdata::tzval_t& t) {
+    out << "t = " << t.first << ", p = ";
+    return out << "#shift_point{t0 = " << t.second.t0 << ", off1 = " <<
+        t.second.off1 << ", off2 = " << t.second.off2 << "}";
+}
+
+} // namespace time
+} // namespace neutx
+
 namespace tztree_test {
 
 namespace nt = neutx::time;
@@ -42,11 +62,22 @@ using boost::chrono::duration_cast;
 
 struct f {
     nt::tzdata *tz;
+    const char *save_tz;
 
     f() {
-        tz = new nt::tzdata(1950, 2100, "America/New_York");
+        const char *timezone = "America/New_York";
+        // save original TZ
+        save_tz = getenv("TZ");
+        // set given TZ
+        setenv("TZ", timezone, 1);
+        tzset();
+        // compile our own data
+        tz = new nt::tzdata(1950, 2100, timezone);
     }
     ~f() {
+        // restore TZ
+        setenv("TZ", save_tz, 1);
+        tzset();
         delete tz;
     }
 
@@ -131,11 +162,11 @@ struct codec {
             out.write(&v, sizeof(v));
     }
 
-    boost::shared_ptr<nt::tzdata> load(const char *file) {
+    nt::tzdata *load(const char *file) {
         ifile in(file);
         head h;
         in.read(&h, sizeof(h));
-        boost::shared_ptr<nt::tzdata> tz(new nt::tzdata(h.lo, h.hi, h.off));
+        nt::tzdata *tz = new nt::tzdata(h.lo, h.hi, h.off);
         nt::tzdata::tztree_t::size_type i;
         nt::tzdata::tzval_t v;
         for (i=0; i<h.n; ++i) {
@@ -144,6 +175,7 @@ struct codec {
         }
         return tz;
     }
+
 };
 
 BOOST_AUTO_TEST_SUITE( test_tztree )
@@ -156,26 +188,35 @@ BOOST_AUTO_TEST_CASE( load_tztree_test )
     delete tz;
 }
 
-BOOST_FIXTURE_TEST_CASE( write_to_file_test, codec )
+BOOST_FIXTURE_TEST_CASE( export_import_test, codec )
 {
     BOOST_TEST_MESSAGE("loading tz data");
-    nt::tzdata *tz = new nt::tzdata(1950, 2100, "America/New_York");
-    BOOST_REQUIRE(tz != 0);
-    const char *file = "file1.bin";
-    BOOST_TEST_MESSAGE("writing to file " << file);
-    dump(file, *tz);
-    delete tz;
-}
+    nt::tzdata *tz1 = new nt::tzdata(1950, 2100, "America/New_York");
+    BOOST_REQUIRE(tz1 != 0);
 
-BOOST_FIXTURE_TEST_CASE( load_from_file_test, codec )
-{
-    const char *file1 = "file1.bin";
-    const char *file2 = "file2.bin";
-    BOOST_TEST_MESSAGE("reading from file " << file1);
-    boost::shared_ptr<nt::tzdata> tzptr = load(file1);
-    BOOST_REQUIRE(tzptr.use_count() == 1);
-    BOOST_TEST_MESSAGE("writing to file " << file2);
-    dump(file2, *tzptr);
+    const char *file = "file.bin";
+    BOOST_TEST_MESSAGE("writing to file " << file);
+    dump(file, *tz1);
+
+    BOOST_TEST_MESSAGE("reading from file " << file);
+    nt::tzdata *tz2 = load(file);
+    BOOST_REQUIRE(tz2 != 0);
+
+    // compare original tztree to what we read from file
+    time_t t1, t2;
+    t1 = tz1->lotime(); t2 = tz2->lotime(); BOOST_REQUIRE_EQUAL(t1, t2);
+    t1 = tz1->hitime(); t2 = tz2->hitime(); BOOST_REQUIRE_EQUAL(t1, t2);
+    t1 = tz1->last_switch_time(); t2 = tz2->last_switch_time();
+    BOOST_REQUIRE_EQUAL(t1, t2);
+    long off1 = tz1->default_offset(); long off2 = tz2->default_offset();
+    BOOST_REQUIRE_EQUAL(off1, off2);
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+        tz1->tztree().begin(), tz1->tztree().end(),
+        tz2->tztree().begin(), tz2->tztree().end()
+    );
+
+    delete tz2;
+    delete tz1;
 }
 
 BOOST_FIXTURE_TEST_CASE( simple_test, f )
@@ -197,10 +238,9 @@ BOOST_FIXTURE_TEST_CASE( massive_test, f )
     srand(1);
     time_t tmin = tz->lotime();
     time_t tmax = tz->hitime();
-    long range = boost::numeric_cast<long>(tmax - tmin);
-    double coeff = (double)range / RAND_MAX;
+    double coeff = ((double)tmax - tmin) / RAND_MAX;
     for (int i=0; i<NSAMPLES; ++i) {
-        time_t t = tmin + boost::numeric_cast<time_t>(rand() * coeff);
+        time_t t = boost::numeric_cast<time_t>(tmin + rand() * coeff);
         BOOST_REQUIRE(t >= tmin && t <= tmax);
         struct tm *tm = localtime(&t);
         time_t t1 = lc_to_utc(tm);
@@ -218,10 +258,9 @@ BOOST_FIXTURE_TEST_CASE( time_test, f )
     srand(1);
     time_t tmin = tz->lotime();
     time_t tmax = tz->hitime();
-    long range = boost::numeric_cast<long>(tmax - tmin);
-    double coeff = (double)range / RAND_MAX;
+    double coeff = ((double)tmax - tmin) / RAND_MAX;
     for (int i=0; i<NSAMPLES; ++i) {
-        time_t t = tmin + boost::numeric_cast<time_t>(rand() * coeff);
+        time_t t = boost::numeric_cast<time_t>(tmin + rand() * coeff);
         BOOST_REQUIRE(t >= tmin && t <= tmax);
         struct tm *tm = localtime(&t);
         tms[i] = *tm;
