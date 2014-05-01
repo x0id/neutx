@@ -153,6 +153,8 @@ inline void hunt(tim& t1, tim& t2) {
 } // anonymous namespace
 
 class tzdata {
+    friend class tzdata_codec;
+
 public:
     // timezone offset switch point
     struct shift_point {
@@ -184,6 +186,13 @@ public:
         : m_switch_t(stop)
         , m_def_offset(offset)
         , m_lotime(start), m_hitime(stop)
+    {}
+
+    // for containers...
+    tzdata()
+        : m_switch_t(0)
+        , m_def_offset(0)
+        , m_lotime(0), m_hitime(0)
     {}
 
     // add transition point data to the tree
