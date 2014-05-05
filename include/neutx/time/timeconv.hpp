@@ -188,13 +188,6 @@ public:
         , m_lotime(start), m_hitime(stop)
     {}
 
-    // for containers...
-    tzdata()
-        : m_switch_t(0)
-        , m_def_offset(0)
-        , m_lotime(0), m_hitime(0)
-    {}
-
     // add transition point data to the tree
     void add_point(time_t t, const shift_point& p) {
         m_tztree[t] = p;
@@ -226,6 +219,13 @@ public:
     }
 
 private:
+    // for containers...
+    tzdata()
+        : m_switch_t(0)
+        , m_def_offset(0)
+        , m_lotime(0), m_hitime(0)
+    {}
+
     void load_tztree(int y1, int y2, const char *tz) {
         // save original TZ
         const char *save_tz = getenv("TZ");
