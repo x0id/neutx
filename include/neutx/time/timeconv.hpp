@@ -168,61 +168,28 @@ public:
         long off2; // new seconds east of UTC
     };
 
-    typedef std::map<time_t, shift_point> tztree_t;
-    typedef tztree_t::value_type tzval_t;
-
-    // construct tzdata from result of particular
-    // timezone discovering process in given years interval
-    tzdata(int y1, int y2, const char *tz = 0) {
-        if (tz)
-            load_tztree(y1, y2, tz);
-        else
-            load_tztree(y1, y2);
-    }
-
-    // construct 'empty' tzdata with defaults only, later can be
-    // populated with transitions using add_point() method
-    tzdata(time_t start, time_t stop, long offset)
-        : m_switch_t(stop)
-        , m_def_offset(offset)
-        , m_lotime(start), m_hitime(stop)
-    {}
-
-    // add transition point data to the tree
-    void add_point(time_t t, const shift_point& p) {
-        m_tztree[t] = p;
-        // adjust 'last switch time'
-        if (m_switch_t == m_hitime || m_switch_t < p.t0)
-            m_switch_t = p.t0;
-    }
-
-    // served limits
-    time_t lotime() const { return m_lotime; }
-    time_t hitime() const { return m_hitime; }
-
-    // defaults
-    time_t last_switch_time() const { return m_switch_t; }
-    long default_offset() const { return m_def_offset; }
-
-    // three const getter
-    const tztree_t& tztree() const { return m_tztree; }
-
-    // get offset(s) for local time represented in seconds
-    void offset(time_t local_secs, shift_point& ret) const {
-        tztree_t::const_iterator it = m_tztree.upper_bound(local_secs);
-        if (it == m_tztree.end()) {
-            ret.t0 = m_switch_t;
-            ret.off1 = m_def_offset;
-            ret.off2 = m_def_offset;
-        } else
-            ret = it->second;
-    }
-
 private:
+    // local secs to shift point map type
+    typedef std::map<time_t, shift_point> ltztree_t;
+    typedef ltztree_t::value_type ltzval_t;
+
+    // offset data for lookup by utc seconds
+    struct loc_offset {
+        void set(long off, bool dst) {
+            offset = off;
+            is_dst = dst;
+        }
+        long offset; // seconds east of UTC
+        bool is_dst; // is daylight saving on
+    };
+
+    // utc secs to loc_offset map type
+    typedef std::map<time_t, loc_offset> utztree_t;
+    typedef utztree_t::value_type utzval_t;
+
     // for containers...
     tzdata()
-        : m_switch_t(0)
-        , m_def_offset(0)
+        : m_switch_t(0), m_def_offset(0), m_def_is_dst(false)
         , m_lotime(0), m_hitime(0)
     {}
 
@@ -272,13 +239,17 @@ private:
                 if (o2 > 0 && t2.m_t > maxtime - o2) continue;
                 // time gap
                 if (o1 < o2) {
-                    m_tztree[t2.m_t + o1].set(t2.m_t, o1, o1);
-                    m_tztree[t2.m_t + o2].set(t2.m_t, o1, o2);
+                    m_ltztree[t2.m_t + o1].set(t2.m_t, o1, o1);
+                    m_ltztree[t2.m_t + o2].set(t2.m_t, o1, o2);
+                    m_utztree[t2.m_t].set(o1, false);
+                    m_def_is_dst = true;
                 }
                 // time repetition
                 else if (o1 > o2) {
-                    m_tztree[t2.m_t + o2].set(t2.m_t, o1, o1);
-                    m_tztree[t2.m_t + o1].set(t2.m_t, o1, o2);
+                    m_ltztree[t2.m_t + o2].set(t2.m_t, o1, o1);
+                    m_ltztree[t2.m_t + o1].set(t2.m_t, o1, o2);
+                    m_utztree[t2.m_t].set(o1, true);
+                    m_def_is_dst = false;
                 }
                 m_switch_t = t2.m_t;
                 m_def_offset = o2;
@@ -286,12 +257,56 @@ private:
         }
     }
 
-    tztree_t m_tztree;  // tree containing offsets
-    time_t m_switch_t;  // time of last switch or m_hitime if no switch exists
-    long m_def_offset;  // default tz offset
+    ltztree_t m_ltztree; // local secs to shift point ordered map
+    utztree_t m_utztree; // utc secs to offset ordered map
+    time_t m_switch_t;   // time of last switch or m_hitime if no switch exists
+    long m_def_offset;   // default tz offset
+    bool m_def_is_dst;   // default dst flag
     // domain of the tree
-    time_t m_lotime;    // minimum time, UTC seconds
-    time_t m_hitime;    // maximum time, UTC seconds
+    time_t m_lotime;     // minimum time, UTC seconds
+    time_t m_hitime;     // maximum time, UTC seconds
+
+public:
+    // construct tzdata from result of particular
+    // timezone discovering process in given years interval
+    tzdata(int y1, int y2, const char *tz = 0) {
+        if (tz)
+            load_tztree(y1, y2, tz);
+        else
+            load_tztree(y1, y2);
+    }
+
+    // get offset(s) for local time represented in seconds
+    void offset(time_t local_secs, shift_point& ret) const {
+        ltztree_t::const_iterator it = m_ltztree.upper_bound(local_secs);
+        if (it == m_ltztree.end()) {
+            ret.t0 = m_switch_t;
+            ret.off1 = m_def_offset;
+            ret.off2 = m_def_offset;
+        } else
+            ret = it->second;
+    }
+
+    // get offset for utc time represented in seconds
+    long offset(time_t utc_secs) const {
+        utztree_t::const_iterator it = m_utztree.upper_bound(utc_secs);
+        if (it == m_utztree.end()) {
+            return m_def_offset;
+        } else
+            return it->second.offset;
+    }
+
+    // get offset for utc time represented in seconds and set dst flag
+    long offset(time_t utc_secs, bool& dst) const {
+        utztree_t::const_iterator it = m_utztree.upper_bound(utc_secs);
+        if (it == m_utztree.end()) {
+            dst = m_def_is_dst;
+            return m_def_offset;
+        } else {
+            dst = it->second.is_dst;
+            return it->second.offset;
+        }
+    }
 };
 
 } // namespace time

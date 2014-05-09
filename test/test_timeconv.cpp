@@ -24,10 +24,100 @@
 #include <boost/chrono/system_clocks.hpp>
 #endif
 
+namespace {
+
+    class ofile {
+        std::ofstream ofs;
+    public:
+        ofile(const char *file) {
+            ofs.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+            ofs.open(file, std::ios::out | std::ios::binary | std::ios::trunc);
+        }
+        ~ofile() {
+            ofs.close();
+        }
+        void write(const void *buf, size_t len) {
+            ofs.write((const char *)buf, len);
+        }
+    };
+
+    class ifile {
+        std::ifstream ifs;
+    public:
+        ifile(const char *fname) {
+            ifs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+            ifs.open(fname, std::ios::in | std::ios::binary);
+        }
+        ifile() {
+            ifs.close();
+        }
+        void read(void *buf, size_t len) {
+            ifs.read((char *)buf, len);
+        }
+    };
+}
+
 namespace neutx {
 namespace time {
 
-bool operator==(const tzdata::tzval_t& v1, const tzdata::tzval_t& v2) {
+struct tzdata_codec {
+    struct head {
+        tzdata::ltztree_t::size_type n;
+        time_t lo, hi, sw;
+        long off;
+    };
+
+    static void dump(const char *file, const tzdata& data) {
+        ofile out(file);
+        head h; bzero(&h, sizeof(h));
+        h.n = data.m_ltztree.size();
+        h.lo = data.m_lotime;
+        h.hi = data.m_hitime;
+        h.sw = data.m_switch_t;
+        h.off = data.m_def_offset;
+        out.write(&h, sizeof(h));
+        BOOST_FOREACH(const tzdata::ltzval_t& v, data.m_ltztree)
+            out.write(&v, sizeof(v));
+    }
+
+    static tzdata *load(const char *file) {
+        ifile in(file);
+        head h;
+        in.read(&h, sizeof(h));
+        tzdata *tz = new tzdata;
+        tz->m_switch_t = h.sw;
+        tz->m_def_offset = h.off;
+        tz->m_lotime = h.lo;
+        tz->m_hitime = h.hi;
+        tzdata::ltztree_t::size_type i;
+        tzdata::ltzval_t v;
+        for (i=0; i<h.n; ++i) {
+            in.read(&v, sizeof(v));
+            tz->m_ltztree.insert(v);
+        }
+        return tz;
+    }
+
+    static time_t lotime(const tzdata& tz) { return tz.m_lotime; }
+    static time_t hitime(const tzdata& tz) { return tz.m_hitime; }
+
+    static void compare(const tzdata& t1, const tzdata& t2) {
+        BOOST_REQUIRE_EQUAL(t1.m_lotime, t2.m_lotime);
+        BOOST_REQUIRE_EQUAL(t1.m_hitime, t2.m_hitime);
+        BOOST_REQUIRE_EQUAL(t1.m_switch_t, t2.m_switch_t);
+        BOOST_REQUIRE_EQUAL(t1.m_def_offset, t2.m_def_offset);
+        BOOST_REQUIRE_EQUAL_COLLECTIONS(
+            t1.m_ltztree.begin(), t1.m_ltztree.end(),
+            t2.m_ltztree.begin(), t2.m_ltztree.end()
+        );
+    }
+
+    typedef tzdata::ltzval_t val_t;
+};
+
+typedef tzdata_codec::val_t val_t;
+
+bool operator==(const val_t& v1, const val_t& v2) {
     if (v1.first != v2.first) return false;
     if (v1.second.t0 != v2.second.t0) return false;
     if (v1.second.off1 != v2.second.off1) return false;
@@ -35,7 +125,7 @@ bool operator==(const tzdata::tzval_t& v1, const tzdata::tzval_t& v2) {
     return true;
 }
 
-std::ostream& operator<<(std::ostream& out, const tzdata::tzval_t& t) {
+std::ostream& operator<<(std::ostream& out, const val_t& t) {
     out << "t = " << t.first << ", p = ";
     return out << "#shift_point{t0 = " << t.second.t0 << ", off1 = " <<
         t.second.off1 << ", off2 = " << t.second.off2 << "}";
@@ -43,6 +133,25 @@ std::ostream& operator<<(std::ostream& out, const tzdata::tzval_t& t) {
 
 } // namespace time
 } // namespace neutx
+
+bool operator==(const tm& t1, const tm& t2) {
+    if (t1.tm_sec != t2.tm_sec) return false;
+    if (t1.tm_min != t2.tm_min) return false;
+    if (t1.tm_hour != t2.tm_hour) return false;
+    if (t1.tm_mday != t2.tm_mday) return false;
+    if (t1.tm_mon != t2.tm_mon) return false;
+    if (t1.tm_year != t2.tm_year) return false;
+    if (t1.tm_wday != t2.tm_wday) return false;
+    if (t1.tm_yday != t2.tm_yday) return false;
+    if (t1.tm_isdst != t2.tm_isdst) return false;
+    return true;
+}
+
+std::ostream& operator<<(std::ostream& out, const tm& t) {
+    return out << "#tm{" << t.tm_sec << ":" << t.tm_min << ":" << t.tm_hour <<
+        ":" << t.tm_mday << ":" << t.tm_mon << ":" << t.tm_year << ":" <<
+        t.tm_wday << ":" << t.tm_yday << ":" << t.tm_isdst << "}";
+}
 
 namespace tztree_test {
 
@@ -104,76 +213,23 @@ struct f {
             tm->tm_sec
         ), tm->tm_isdst);
     }
+
+    struct tm *utc_to_lc(const time_t *t) {
+        bool dst;
+        time_t loc = *t + tz->offset(*t, dst);
+        struct tm *ret = gmtime(&loc);
+        ret->tm_isdst = dst;
+        return ret;
+    }
 };
 
 struct codec {
-    class ofile {
-        std::ofstream ofs;
-    public:
-        ofile(const char *file) {
-            ofs.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-            ofs.open(file, std::ios::out | std::ios::binary | std::ios::trunc);
-        }
-        ~ofile() {
-            try {
-                ofs.close();
-            } catch (...) {
-            }
-        }
-        void write(const void *buf, size_t len) {
-            ofs.write((const char *)buf, len);
-        }
-    };
-
-    class ifile {
-        std::ifstream ifs;
-    public:
-        ifile(const char *fname) {
-            ifs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-            ifs.open(fname, std::ios::in | std::ios::binary);
-        }
-        ifile() {
-            try {
-                ifs.close();
-            } catch (...) {
-            }
-        }
-        void read(void *buf, size_t len) {
-            ifs.read((char *)buf, len);
-        }
-    };
-
-    struct head {
-        nt::tzdata::tztree_t::size_type n;
-        time_t lo, hi, sw;
-        long off;
-    };
-
     void dump(const char *file, const nt::tzdata& data) {
-        ofile out(file);
-        head h; bzero(&h, sizeof(h));
-        h.n = data.tztree().size();
-        h.lo = data.lotime();
-        h.hi = data.hitime();
-        h.sw = data.last_switch_time();
-        h.off = data.default_offset();
-        out.write(&h, sizeof(h));
-        BOOST_FOREACH(const nt::tzdata::tzval_t& v, data.tztree())
-            out.write(&v, sizeof(v));
+        nt::tzdata_codec::dump(file, data);
     }
 
     nt::tzdata *load(const char *file) {
-        ifile in(file);
-        head h;
-        in.read(&h, sizeof(h));
-        nt::tzdata *tz = new nt::tzdata(h.lo, h.hi, h.off);
-        nt::tzdata::tztree_t::size_type i;
-        nt::tzdata::tzval_t v;
-        for (i=0; i<h.n; ++i) {
-            in.read(&v, sizeof(v));
-            tz->add_point(v.first, v.second);
-        }
-        return tz;
+        return nt::tzdata_codec::load(file);
     }
 
 };
@@ -203,17 +259,7 @@ BOOST_FIXTURE_TEST_CASE( export_import_test, codec )
     BOOST_REQUIRE(tz2 != 0);
 
     // compare original tztree to what we read from file
-    time_t t1, t2;
-    t1 = tz1->lotime(); t2 = tz2->lotime(); BOOST_REQUIRE_EQUAL(t1, t2);
-    t1 = tz1->hitime(); t2 = tz2->hitime(); BOOST_REQUIRE_EQUAL(t1, t2);
-    t1 = tz1->last_switch_time(); t2 = tz2->last_switch_time();
-    BOOST_REQUIRE_EQUAL(t1, t2);
-    long off1 = tz1->default_offset(); long off2 = tz2->default_offset();
-    BOOST_REQUIRE_EQUAL(off1, off2);
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-        tz1->tztree().begin(), tz1->tztree().end(),
-        tz2->tztree().begin(), tz2->tztree().end()
-    );
+    nt::tzdata_codec::compare(*tz1, *tz2);
 
     delete tz2;
     delete tz1;
@@ -236,15 +282,17 @@ BOOST_FIXTURE_TEST_CASE( massive_test, f )
 {
     BOOST_TEST_MESSAGE("random test using " << NSAMPLES << " samples");
     srand(1);
-    time_t tmin = tz->lotime();
-    time_t tmax = tz->hitime();
+    time_t tmin = nt::tzdata_codec::lotime(*tz);
+    time_t tmax = nt::tzdata_codec::hitime(*tz);
     double coeff = ((double)tmax - tmin) / RAND_MAX;
     for (int i=0; i<NSAMPLES; ++i) {
         time_t t = boost::numeric_cast<time_t>(tmin + rand() * coeff);
         BOOST_REQUIRE(t >= tmin && t <= tmax);
-        struct tm *tm = localtime(&t);
-        time_t t1 = lc_to_utc(tm);
-        time_t t2 = timelocal(tm);
+        struct tm tm1 = *localtime(&t);
+        struct tm tm2 = *utc_to_lc(&t);
+        BOOST_REQUIRE_EQUAL(tm1, tm2);
+        time_t t1 = lc_to_utc(&tm1);
+        time_t t2 = timelocal(&tm1);
         BOOST_REQUIRE_EQUAL(t1, t2);
     }
 }
@@ -256,8 +304,8 @@ BOOST_FIXTURE_TEST_CASE( time_test, f )
 
     struct tm *tms = new tm[NSAMPLES];
     srand(1);
-    time_t tmin = tz->lotime();
-    time_t tmax = tz->hitime();
+    time_t tmin = nt::tzdata_codec::lotime(*tz);
+    time_t tmax = nt::tzdata_codec::hitime(*tz);
     double coeff = ((double)tmax - tmin) / RAND_MAX;
     for (int i=0; i<NSAMPLES; ++i) {
         time_t t = boost::numeric_cast<time_t>(tmin + rand() * coeff);
