@@ -62,21 +62,26 @@ namespace time {
 
 struct tzdata_codec {
     struct head {
-        tzdata::ltztree_t::size_type n;
+        tzdata::ltztree_t::size_type ln;
+        tzdata::utztree_t::size_type un;
         time_t lo, hi, sw;
-        long off;
+        long off; bool dst;
     };
 
     static void dump(const char *file, const tzdata& data) {
         ofile out(file);
         head h; bzero(&h, sizeof(h));
-        h.n = data.m_ltztree.size();
+        h.ln = data.m_ltztree.size();
+        h.un = data.m_utztree.size();
         h.lo = data.m_lotime;
         h.hi = data.m_hitime;
         h.sw = data.m_switch_t;
         h.off = data.m_def_offset;
+        h.dst = data.m_def_is_dst;
         out.write(&h, sizeof(h));
         BOOST_FOREACH(const tzdata::ltzval_t& v, data.m_ltztree)
+            out.write(&v, sizeof(v));
+        BOOST_FOREACH(const tzdata::utzval_t& v, data.m_utztree)
             out.write(&v, sizeof(v));
     }
 
@@ -87,14 +92,21 @@ struct tzdata_codec {
         tzdata *tz = new tzdata;
         tz->m_switch_t = h.sw;
         tz->m_def_offset = h.off;
+        tz->m_def_is_dst = h.dst;
         tz->m_lotime = h.lo;
         tz->m_hitime = h.hi;
-        tzdata::ltztree_t::size_type i;
-        tzdata::ltzval_t v;
-        for (i=0; i<h.n; ++i) {
+        { tzdata::ltztree_t::size_type i;
+          tzdata::ltzval_t v;
+          for (i=0; i<h.ln; ++i) {
             in.read(&v, sizeof(v));
             tz->m_ltztree.insert(v);
-        }
+        } }
+        { tzdata::utztree_t::size_type i;
+          tzdata::utzval_t v;
+          for (i=0; i<h.un; ++i) {
+            in.read(&v, sizeof(v));
+            tz->m_utztree.insert(v);
+        } }
         return tz;
     }
 
@@ -106,18 +118,25 @@ struct tzdata_codec {
         BOOST_REQUIRE_EQUAL(t1.m_hitime, t2.m_hitime);
         BOOST_REQUIRE_EQUAL(t1.m_switch_t, t2.m_switch_t);
         BOOST_REQUIRE_EQUAL(t1.m_def_offset, t2.m_def_offset);
+        BOOST_REQUIRE_EQUAL(t1.m_def_is_dst, t2.m_def_is_dst);
         BOOST_REQUIRE_EQUAL_COLLECTIONS(
             t1.m_ltztree.begin(), t1.m_ltztree.end(),
             t2.m_ltztree.begin(), t2.m_ltztree.end()
         );
+        BOOST_REQUIRE_EQUAL_COLLECTIONS(
+            t1.m_utztree.begin(), t1.m_utztree.end(),
+            t2.m_utztree.begin(), t2.m_utztree.end()
+        );
     }
 
-    typedef tzdata::ltzval_t val_t;
+    typedef tzdata::ltzval_t shiftp_t;
+    typedef tzdata::utzval_t offset_t;
 };
 
-typedef tzdata_codec::val_t val_t;
+typedef tzdata_codec::shiftp_t shiftp_t;
+typedef tzdata_codec::offset_t offset_t;
 
-bool operator==(const val_t& v1, const val_t& v2) {
+bool operator==(const shiftp_t& v1, const shiftp_t& v2) {
     if (v1.first != v2.first) return false;
     if (v1.second.t0 != v2.second.t0) return false;
     if (v1.second.off1 != v2.second.off1) return false;
@@ -125,10 +144,23 @@ bool operator==(const val_t& v1, const val_t& v2) {
     return true;
 }
 
-std::ostream& operator<<(std::ostream& out, const val_t& t) {
+bool operator==(const offset_t& v1, const offset_t& v2) {
+    if (v1.first != v2.first) return false;
+    if (v1.second.offset != v2.second.offset) return false;
+    if (v1.second.is_dst != v2.second.is_dst) return false;
+    return true;
+}
+
+std::ostream& operator<<(std::ostream& out, const shiftp_t& t) {
     out << "t = " << t.first << ", p = ";
     return out << "#shift_point{t0 = " << t.second.t0 << ", off1 = " <<
         t.second.off1 << ", off2 = " << t.second.off2 << "}";
+}
+
+std::ostream& operator<<(std::ostream& out, const offset_t& t) {
+    out << "t = " << t.first << ", p = ";
+    return out << "#loc_offset{off = " << t.second.offset << ", dst = " <<
+        t.second.is_dst << "}";
 }
 
 } // namespace time
