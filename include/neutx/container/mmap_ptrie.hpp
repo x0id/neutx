@@ -61,6 +61,9 @@ public:
         , m_trie(m_store, m_root)
     {}
 
+    // access to node store
+    const store_t& store() const { return m_store; }
+
     // fold through trie nodes following key components
     template <typename Key, typename A, typename F>
     void fold(const Key& key, A& acc, F proc) {
