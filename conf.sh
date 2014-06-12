@@ -3,6 +3,7 @@
 
 opts[k++]="--enable-optimize"
 opts[k++]="--enable-warnings"
+# opts[k++]="--enable-demo"
 [[ -n $BOOST ]] && opts[k++]="--with-boost=$BOOST"
 
 ./configure ${opts[@]}

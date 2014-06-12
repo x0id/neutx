@@ -1,11 +1,15 @@
 
 bin_PROGRAMS = \
+	bsearch_demo \
 	strie_demo strie_write_demo strie_mmap_demo \
 	actrie_demo actrie_write_demo actrie_mmap_demo \
 	digit_trie_demo digit_trie_write_demo digit_trie_mmap_demo \
 	digit_actrie_demo digit_actrie_write_demo digit_actrie_mmap_demo
 
 include_HEADERS = string_codec.hpp
+
+bsearch_demo_SOURCES = bsearch_demo.cpp
+bsearch_demo_CPPFLAGS = -I../include
 
 strie_demo_SOURCES = strie_demo.cpp
 strie_demo_CPPFLAGS = -I../include $(BOOST_CPPFLAGS)

@@ -1,5 +1,6 @@
 .deps
 *.o
+bsearch_demo
 strie_demo
 strie_write_demo
 strie_mmap_demo
