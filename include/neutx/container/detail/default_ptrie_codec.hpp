@@ -22,17 +22,17 @@ namespace neutx {
 namespace container {
 namespace detail {
 
-struct mmap_trie_codec {
+template<typename AddrType>
+struct mmap_trie_codec_impl {
 
     // default trie encoder
-    template<typename AddrType>
-    class encoder {
+    class writer {
         typedef std::pair<const void *, size_t> buf_t;
         AddrType root;
         buf_t buf;
 
     public:
-        template<typename T> encoder(T&) {}
+        template<typename T> writer(T&) {}
 
         template<typename F, typename S>
         void store(F f, S&) {
@@ -47,8 +47,7 @@ struct mmap_trie_codec {
     };
 
     // find root node address
-    template<typename AddrType>
-    struct root_finder {
+    struct get_root {
         AddrType operator()(const void *m_addr, size_t m_size) {
             size_t s = sizeof(AddrType);
             if (m_size < s)
@@ -57,6 +56,14 @@ struct mmap_trie_codec {
         }
     };
 
+};
+
+struct mmap_trie_codec {
+    template<typename AddrType>
+    struct bind {
+        typedef typename mmap_trie_codec_impl<AddrType>::writer encoder;
+        typedef typename mmap_trie_codec_impl<AddrType>::get_root root_finder;
+    };
 };
 
 } // namespace detail

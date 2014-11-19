@@ -112,7 +112,7 @@ struct digit_trie {
         typedef typename DataCodec::template bind<addr_type>::encoder data_encoder;
         typedef typename dt::sarray<addr_type>::encoder coll_encoder;
 
-        typedef typename TrieCodec::template encoder<addr_type> trie_encoder;
+        typedef typename TrieCodec::template bind<addr_type>::encoder trie_encoder;
 
         // not part of encoder protocol - placed here for convenience only
         typedef dt::file_store<addr_type> file_store;
@@ -135,7 +135,7 @@ struct digit_mmap_trie {
     typedef typename digit_node<data_type, Model, addr_type>::type_ro node_type;
 
     // root node finder
-    typedef typename TrieCodec::template root_finder<addr_type> root_finder;
+    typedef typename TrieCodec::template bind<addr_type>::root_finder root_finder;
 
     // mmap-ed trie type
     typedef ct::mmap_ptrie<node_type, root_finder> trie_type;

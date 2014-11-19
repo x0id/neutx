@@ -40,7 +40,7 @@ typedef dt::pnode_ro<
 > node_t;
 
 // root node finder
-typedef dt::mmap_trie_codec::root_finder<offset_t> root_f;
+typedef typename dt::mmap_trie_codec::bind<offset_t>::root_finder root_f;
 
 // trie type
 typedef ct::mmap_ptrie<node_t, root_f> trie_t;

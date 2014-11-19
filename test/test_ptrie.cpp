@@ -165,7 +165,7 @@ struct f1 {
         typedef dt::file_store<addr_type> store_type;
         typedef data::encoder<addr_type> data_encoder;
         typedef dt::sarray<addr_type>::encoder coll_encoder;
-        typedef dt::mmap_trie_codec::encoder<addr_type> trie_encoder;
+        typedef dt::mmap_trie_codec::bind<addr_type>::encoder trie_encoder;
     };
 };
 
@@ -178,7 +178,7 @@ struct f2 {
     typedef dt::pnode_ro<
         dt::flat_data_store<void, offset_t>, offset_t, dt::sarray<>
     > node_t;
-    typedef dt::mmap_trie_codec::root_finder<offset_t> root_f;
+    typedef dt::mmap_trie_codec::bind<offset_t>::root_finder root_f;
     typedef ct::mmap_ptrie<node_t, root_f> trie_t;
     typedef trie_t::store_t store_t;
 

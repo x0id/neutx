@@ -43,7 +43,7 @@ struct EncoderTraits {
     typedef dt::file_store<addr_type> store_type;
     typedef typename string_codec::bind<addr_type>::encoder data_encoder;
     typedef typename dt::sarray<addr_type>::encoder coll_encoder;
-    typedef dt::mmap_trie_codec::encoder<addr_type> trie_encoder;
+    typedef typename dt::mmap_trie_codec::bind<addr_type>::encoder trie_encoder;
 };
 
 // offset type in external data representation
