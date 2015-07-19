@@ -85,7 +85,7 @@ public:
         struct {
             mask_t mask;
             Data elements[capacity];
-        } body;
+        } __attribute__((packed)) body;
 
         unsigned cnt;
 
@@ -105,9 +105,10 @@ public:
 
         template<typename T, typename S, typename F, typename O>
         void store(const T& coll, const S&, F func, O& out) {
+            // bzero(&body, sizeof(body));
             coll.foreach_keyval(ftor<encoder, F, O>(*this, func, out));
             buf.first = &body;
-            buf.second = sizeof(body) - (capacity - cnt) * sizeof(Data);
+            buf.second = (char*)&body.elements[cnt] - (char*)&body;
         }
 
         const buf_t& buff() const { return buf; }
@@ -124,7 +125,7 @@ public:
         buf_t buf;
     };
 
-};
+} __attribute__((packed));
 
 template <typename Data, typename IdxMap>
 IdxMap sarray<Data, IdxMap>::m_map;
