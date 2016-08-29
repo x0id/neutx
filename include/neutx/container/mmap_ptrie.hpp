@@ -59,7 +59,9 @@ public:
         , m_store(m_addr, m_size)
         , m_root(root(m_addr, m_size))
         , m_trie(m_store, m_root)
-    {}
+    {
+        m_reg.advise(bip::mapped_region::advice_willneed);
+    }
 
     // access to node store
     const store_t& store() const { return m_store; }
