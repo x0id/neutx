@@ -47,21 +47,26 @@ protected:
     const void *m_addr;  // address of memory region
     size_t      m_size;  // size of memory region
     store_t     m_store; // read-only node and data store
+    RootF       m_head;  // root node finder functor
     ptr_t       m_root;  // root position
     trie_t      m_trie;  // underlying ptrie
 
 public:
-    mmap_ptrie(const char *fname, RootF root = RootF())
+    mmap_ptrie(const char *fname, const RootF& root = RootF())
         : m_fmap(fname, bip::read_only)
         , m_reg(m_fmap, bip::read_only)
         , m_addr(m_reg.get_address())
         , m_size(m_reg.get_size())
         , m_store(m_addr, m_size)
-        , m_root(root(m_addr, m_size))
+        , m_head(root)
+        , m_root(m_head(m_addr, m_size))
         , m_trie(m_store, m_root)
     {
         m_reg.advise(bip::mapped_region::advice_willneed);
     }
+
+    // header/root-finder getter
+    const RootF& head() const { return m_head; }
 
     // access to node store
     const store_t& store() const { return m_store; }
