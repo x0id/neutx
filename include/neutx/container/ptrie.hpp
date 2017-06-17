@@ -198,6 +198,10 @@ public:
     const store_t& store() const { return m_store; }
     store_t& store() { return m_store; }
 
+    // access root data
+    template<typename Data>
+    const Data& root() const { return m_root.data(); }
+
     // destroy hierarchy of nodes starting with root
     void clear() { clear(m_root_ptr); }
 
@@ -207,10 +211,23 @@ public:
         path_to_node(key)->data() = data;
     }
 
-    // update node data using provided merge-functor
-    template<typename Key, typename MergeFunctor, typename DataT>
-    void update(const Key& key, const DataT& data, MergeFunctor& merge) {
-        merge(path_to_node(key)->data(), data);
+    // update node data using provided update-functor
+    template<typename Key, typename UpdateF, typename DataT>
+    void update(const Key& key, const DataT& data, UpdateF& update_f) {
+        update_f(path_to_node(key)->data(), data);
+    }
+
+    // update data of all nodes in the path using provided update-functor
+    template<typename Key, typename UpdateF, typename DataT>
+    void update_path(const Key& key, const DataT& data, UpdateF& update_f) {
+        typename Traits::template cursor<Key>::type cursor(key);
+        node_t *p_node = &m_root;
+        update_f(p_node->data(), data);
+        while (cursor.has_data()) {
+            p_node = next_node(p_node, cursor.get_data());
+            update_f(p_node->data(), data);
+            cursor.next();
+        }
     }
 
     // calculate suffix links
