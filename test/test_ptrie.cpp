@@ -505,7 +505,7 @@ BOOST_FIXTURE_TEST_CASE( chrono_test, f0 )
         size_t n = strlen(l_num);
         while (n > 0) {
             key_t l_key(l_num, n);
-            tab_it_t it = l_tab.find(l_num);
+            tab_it_t it = l_tab.find(l_key);
             if (it != e)
                 break;
             --n;
