@@ -55,6 +55,13 @@ static void enumerate(const std::string& key, node_t& node, store_t&) {
     std::cout << "'" << key << "' -> '" << node.data() << "'" << std::endl;
 }
 
+struct updater {
+    void operator()(data_t& a, const data_t& b) {
+        std::cout << "update '" << a << "' with '" << b << "'" << std::endl;
+        a += b;
+    }
+};
+
 int main() {
     trie_t trie;
 
@@ -72,6 +79,18 @@ int main() {
     // traverse all the nodes
     trie.foreach<ct::up, std::string>(enumerate);
     trie.foreach<ct::down, std::string>(enumerate);
+
+    // update path
+    updater u;
+    trie.update_path("12389", "^", u);
+    trie.update_path("1", "%", u);
+    trie.update_path("", "?", u);
+    trie.foreach<ct::down, std::string>(enumerate);
+
+    // fold through the key-matching nodes
+    std::string total = trie.root<data_t>();
+    std::cout << "total: " << (total.empty() ? "not found" : total)
+        << std::endl;
 
     return 0;
 }

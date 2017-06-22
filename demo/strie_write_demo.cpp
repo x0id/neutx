@@ -50,6 +50,13 @@ struct EncoderTraits {
 typedef EncoderTraits<uint32_t> encoder_t;
 typedef encoder_t::store_type output_t;
 
+struct updater {
+    void operator()(data_t& a, const data_t& b) {
+        std::cout << "update '" << a << "' with '" << b << "'" << std::endl;
+        a += b;
+    }
+};
+
 int main() {
     trie_t trie;
 
@@ -57,6 +64,12 @@ int main() {
     trie.store("123", "three");
     trie.store("1234", "four");
     trie.store("12345", "five");
+
+    // update path
+    updater u;
+    trie.update_path("12389", "^", u);
+    trie.update_path("1", "%", u);
+    trie.update_path("", "?", u);
 
     // write (export) trie to the file in external format
     output_t file("trie.bin");
