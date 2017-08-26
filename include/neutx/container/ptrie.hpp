@@ -251,7 +251,7 @@ public:
 
     // fold through trie nodes following key components
     template<typename Key, typename A, typename F>
-    void fold(const Key& key, A& acc, F proc) {
+    void fold(const Key& key, A& acc, F proc) const {
         typename Traits::template cursor<Key>::type cursor(key);
         node_t *node = &m_root;
         position_t k = 0;
@@ -269,7 +269,7 @@ public:
 
     // fold through trie nodes following key components and suffix links
     template<typename Key, typename A, typename F>
-    void fold_full(const Key& key, A& acc, F proc) {
+    void fold_full(const Key& key, A& acc, F proc) const {
         typename Traits::template cursor<Key>::type cursor(key);
         node_t *node = &m_root;
         position_t end = 0;
@@ -358,7 +358,7 @@ protected:
     }
 
     // get pointer to suffix node, may return null
-    node_t *read_suffix(const node_t *a_node) {
+    node_t *read_suffix(const node_t *a_node) const {
         return node_ptr_or_null(a_node->suffix());
     }
 
