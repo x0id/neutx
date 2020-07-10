@@ -446,7 +446,7 @@ protected:
             m_store, boost::bind(&ptrie::template store_child<T, Out>, this, _1,
             boost::ref(enc), boost::ref(out)), enc, out);
         // update cross-reference links
-        m_root.store_links<T, Out>(m_store, boost::bind(
+        m_root.template store_links<T, Out>(m_store, boost::bind(
             &ptrie::template store_links<T, Out>, this, _1,
                 boost::ref(enc), boost::ref(out)), enc, out);
         // return root node address
