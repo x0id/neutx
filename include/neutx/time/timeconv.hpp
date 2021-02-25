@@ -170,7 +170,13 @@ public:
 
 private:
     // local secs to shift point map type
+#ifdef TEST_ALLOC
+    typedef std::pair<const time_t, shift_point> pair1;
+    typedef TEST_ALLOC::template rebind<pair1>::other alloc1;
+    typedef std::map<time_t, shift_point, std::less<time_t>, alloc1> ltztree_t;
+#else
     typedef std::map<time_t, shift_point> ltztree_t;
+#endif
     typedef ltztree_t::value_type ltzval_t;
 
     // offset data for lookup by utc seconds
@@ -184,7 +190,13 @@ private:
     };
 
     // utc secs to loc_offset map type
+#ifdef TEST_ALLOC
+    typedef std::pair<const time_t, loc_offset> pair2;
+    typedef TEST_ALLOC::template rebind<pair2>::other alloc2;
+    typedef std::map<time_t, loc_offset, std::less<time_t>, alloc2> utztree_t;
+#else
     typedef std::map<time_t, loc_offset> utztree_t;
+#endif
     typedef utztree_t::value_type utzval_t;
 
     // for containers...
