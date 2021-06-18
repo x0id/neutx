@@ -249,6 +249,33 @@ public:
         walker.foreach(m_root);
     }
 
+    // find a node exactly matching given key or closest left node at the
+    // level where current symbol node couldn't be matched otherwise
+    // return a pair of flag "left node used" and node pointer (or nullptr)
+    template<typename Key>
+    std::pair<bool, const node_t*> left_bound(const Key& key) const {
+        typename traits_t::template cursor<Key>::type cursor(key);
+        const node_t *node = &m_root;
+        bool left = false;
+        symbol_t sym;
+        while (cursor.has_data()) {
+            sym = cursor.get_data();
+            auto x = node->children().get_left(sym);
+            const node_t *next_node =
+                x.second ? node_ptr_or_null(*x.second) : nullptr;
+            if (next_node) {
+                left = x.first;
+                node = next_node;
+                if (left)
+                    break;
+                cursor.next();
+            }
+            else
+                break;
+        }
+        return std::make_pair(left, node);
+    }
+
     // fold through trie nodes following key components
     template<typename Key, typename A, typename F>
     void fold(const Key& key, A& acc, F proc) const {

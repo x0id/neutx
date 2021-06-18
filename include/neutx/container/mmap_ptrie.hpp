@@ -88,6 +88,14 @@ public:
     void foreach(F functor) const {
         m_trie.foreach<D, Key, F>(functor);
     }
+
+    // find a node exactly matching given key or closest left node at the
+    // level where current symbol node couldn't be matched otherwise
+    // return a pair of flag "left node used" and node pointer (or nullptr)
+    template<typename Key>
+    std::pair<bool, const Node*> left_bound(const Key& key) const {
+        return m_trie.left_bound(key);
+    }
 };
 
 } // namespace container
