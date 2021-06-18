@@ -70,6 +70,19 @@ public:
             return 0;
     }
 
+    // find an element by symbol, if not found, check if
+    // left adjacent element exists
+    std::pair<bool, const Data*> get_left(symbol_t a_symbol) const {
+        mask_t l_mask; index_t l_index;
+        m_map.index(m_mask, a_symbol, l_mask, l_index);
+        if ((l_mask & m_mask) != 0)
+            return std::make_pair(false, &m_array[l_index]);
+        else if (l_index > 0)
+            return std::make_pair(true, &m_array[l_index - 1]);
+        else
+            return std::make_pair(false, nullptr);
+    }
+
     // call functor for each key-value pair
     template<typename F> void foreach_keyval(F f) const {
         IdxMap::foreach(m_mask, k2kv<Data, F>(m_array, f));
