@@ -184,7 +184,7 @@ public:
     {}
 
     // constructor
-    ptrie(store_t& a_store, ptr_t& a_root)
+    ptrie(const store_t& a_store, ptr_t& a_root)
         : m_store(a_store), m_root(get_root(a_root))
     {}
 

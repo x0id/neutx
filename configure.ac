@@ -44,7 +44,7 @@ dnl Checks for libraries.
 dnl Tweaking build options.
 
 dnl restore original flags, adding new options
-CXXFLAGS="${CXX_FLAGS_SAVED% } -MMD"
+CXXFLAGS="${CXX_FLAGS_SAVED% } -std=c++11 -MMD"
 
 AC_ARG_ENABLE(debug,
     AS_HELP_STRING([--enable-debug],[enable debug [[default=yes]]]),
