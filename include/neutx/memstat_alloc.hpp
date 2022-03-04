@@ -24,24 +24,38 @@
 
 namespace neutx {
 
-template<typename T, typename C>
+struct std_alloc {
+    static void *allocate(std::size_t size) {
+        return std::malloc(size);
+    }
+
+    static void deallocate(void *p) {
+        std::free(p);
+    }
+};
+
+template<typename T, typename C, typename A = std_alloc>
 struct memstat_alloc : std::allocator<T> {
-    typedef typename std::allocator<T>::pointer pointer;
-    typedef typename std::allocator<T>::size_type size_type;
+    using typename std::allocator<T>::pointer;
+    using typename std::allocator<T>::size_type;
 
     template<typename U>
     struct rebind {
-        typedef memstat_alloc<U, C> other;
+        typedef memstat_alloc<U, C, A> other;
     };
 
-    memstat_alloc() {}
+    memstat_alloc() noexcept
+        : std::allocator<T>()
+    {}
 
     template<typename U>
-    memstat_alloc(memstat_alloc<U, C> const& u) : std::allocator<T>(u) {}
+    memstat_alloc(memstat_alloc<U, C, A> const& u) noexcept
+        : std::allocator<T>(u)
+    {}
 
-    pointer allocate(size_type size, std::allocator<void>::const_pointer = 0) {
+    pointer allocate(size_type size, const void *hint = 0) {
         size *= sizeof(T);
-        void *p = std::malloc(size);
+        void *p = A::allocate(size);
         if (p == 0) throw std::bad_alloc();
         C::inc(size);
         return static_cast<pointer>(p);
@@ -49,7 +63,7 @@ struct memstat_alloc : std::allocator<T> {
 
     void deallocate(pointer p, size_type size) {
         C::dec(size * sizeof(T));
-        std::free(p);
+        A::deallocate(p);
     }
 };
 
